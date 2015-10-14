@@ -8,6 +8,20 @@ $ npm install superagent-extend
 
 ## API
 
+### done
+
+return promise wrap request end
+
+```js
+const request = require('superagent-extend');
+const co = require('co');
+co(function *() {
+  let res = yield request.get('http://www.baidu.com/').done();
+}).catch(function(err) {
+  console.error(err);
+});
+```
+
 ### addListener
 
 add event listener for all http request
@@ -20,9 +34,6 @@ request.addListener('request', function(req) {
 });
 request.addListener('complete', function(req, res) {
   console.dir(res);
-});
-request.addListener('error', function(err, req, res) {
-  console.error(err);
 });
 co(function *() {
   let res = yield request.get('http://www.baidu.com/').done();

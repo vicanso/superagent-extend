@@ -8,7 +8,7 @@ const router = require('koa-router')();
 
 describe('request', function (argument) {
   let app = koa();
-
+  let noop = function () {};
   router.get('/', function () {
     this.body = 'OK';
   });
@@ -23,32 +23,43 @@ describe('request', function (argument) {
   let port = process.env.PORT || 10000;
   let httpServer = http.createServer(app.callback()).listen(port);
   let requestUrl = 'http://localhost:' + port + '/';
-  request.on('request', function () {});
-  it('should set global timeout successful', function (done) {
-    request.timeout(100);
-    co(function* () {
-      try {
-        let res = yield request.get(requestUrl).done();
-      } catch (err) {
-        assert.equal(err.code, 'ECONNRESET');
-      } finally {
-        request.timeout(0);
-        done()
-      }
+
+  it('should add listener successful', function (done) {
+    let success = false;
+    let fn = function () {
+      success = true;
+    };
+    request.addListener('request', fn);
+    request.get(requestUrl).done().then(function () {
+      assert(success);
+      request.removeListener('request', fn);
+      done();
     });
   });
 
+
+
+  it('should set global timeout successful', function (done) {
+    request.timeout(100);
+    request.get(requestUrl).done().then(noop, function (err) {
+      assert.equal(err.code, 'ECONNABORTED');
+      request.timeout(0);
+      done();
+    });
+  });
+
+
+
   it('should add request interceptor successful', function (done) {
-    co(function* () {
-      let success = false;
-      let interceptor = function (req) {
-        return new Promise(function (resolve, reject) {
-          success = true;
-          setTimeout(resolve, 1);
-        });
-      };
-      request.addInterceptor('request', interceptor);
-      let res = yield request.get(requestUrl).done();
+    let success = false;
+    let interceptor = function (req) {
+      return new Promise(function (resolve, reject) {
+        success = true;
+        setTimeout(resolve, 1);
+      });
+    };
+    request.addInterceptor('request', interceptor);
+    request.get(requestUrl).done().then(function () {
       assert(success);
       request.removeInterceptor('request', interceptor);
       done();
@@ -56,26 +67,28 @@ describe('request', function (argument) {
   });
 
 
+
   it('should add response interceptor successful', function (done) {
-    co(function* () {
-      let success = false;
-      let interceptor = function (req) {
-        return new Promise(function (resolve, reject) {
-          success = true;
-          setTimeout(resolve, 1);
-        });
-      };
-      request.addInterceptor('response', interceptor);
-      let res = yield request.get(requestUrl).done();
+    let success = false;
+    let interceptor = function (req) {
+      return new Promise(function (resolve, reject) {
+        success = true;
+        setTimeout(resolve, 1);
+      });
+    };
+    request.addInterceptor('response', interceptor);
+    request.get(requestUrl).done().then(function () {
       assert(success);
       request.removeInterceptor('response', interceptor);
+      request.removeInterceptor('response');
       done();
     });
   });
 
+
+
   it('should request successful', function (done) {
-    co(function* () {
-      let res = yield request.get(requestUrl).done();
+    request.get(requestUrl).done().then(function (res) {
       assert(res.status === 200);
       done();
       httpServer.close()
