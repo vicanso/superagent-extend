@@ -54,6 +54,10 @@ If interceptor function return promise, it will be execute sequence.
 
 Demo execute sequence is: logIn --> addQuery --> fetch start --> fetch end --> response
 
+Arguments:
+
+- `function` interceptor function
+
 ```js
 'use strict';
 const superagentExtend = require('superagent-extend');
@@ -85,6 +89,10 @@ request('http://www.baidu.com/').done().then(function(res) {
 
 Remove request interceptor.
 
+Arguments:
+
+- `function` remove interceptor function. If no arguments, it will remove all interceptor function.
+
 ```js
 'use strict';
 const superagentExtend = require('superagent-extend');
@@ -113,6 +121,10 @@ If interceptor function return promise, it will be execute sequence.
 
 Demo execute sequence is: fetch start --> fetch end --> logLongRequest --> response
 
+Arguments:
+
+- `function` interceptor function
+
 ```js
 'use strict';
 const superagentExtend = require('superagent-extend');
@@ -138,6 +150,9 @@ request('http://www.baidu.com/').done().then(function(res) {
 
 Remove response interceptor.
 
+Arguments:
+
+- `function` remove interceptor function. If no arguments, it will remove all interceptor function.
 
 ```js
 'use strict';
@@ -170,7 +185,11 @@ request('http://www.baidu.com/').done().then(function(res) {
 
 ### timeout
 
-set timeout, default 0(no timeout).
+Set request timeout.
+
+Arguments:
+
+- `ms` timeout ms, default 0(no timeout).
 
 ```js
 'use strict';
@@ -188,8 +207,80 @@ request('http://www.baidu.com/').done().then(function(res) {
 });
 ```
 
+### addHeader
+
+Add header for http request.
+
+Arguments:
+
+- `method` http method, `common` header is use for all method.
+
+- `header` http request header.
+
+```js
+'use strict';
+const superagentExtend = require('superagent-extend');
+const request = superagentExtend.request;
+const seUtil = superagentExtend.util;
+const assert = require('assert');
+
+// set common header
+seUtil.addHeader('common', {
+  'X-Key': 'vicanso'
+});
+
+// set get header
+seUtil.addHeader('get', {
+  'X-Get-Key': 'vicanso'
+});
+
+request('http://www.baidu.com/').done().then(function(res) {
+  assert.equal(res.req._headers['x-key'], 'vicanso');
+  assert.equal(res.req._headers['x-get-key'], 'vicanso');
+  assert.equal(res.status, 200);
+}, function(err) {
+  console.error(err);
+});
+```
+
+### removeHeader
+
+Remove header for http request.
+
+Arguments:
+
+- `method` http method.
+
+- `key` http request header name. If !key, remove all header for the method.
 
 
+```js
+'use strict';
+const superagentExtend = require('superagent-extend');
+const request = superagentExtend.request;
+const seUtil = superagentExtend.util;
+const assert = require('assert');
+
+// set common header
+seUtil.addHeader('common', {
+  'X-Key': 'vicanso'
+});
+
+// set get header
+seUtil.addHeader('get', {
+  'X-Get-Key': 'vicanso'
+});
+
+// remove get x-get-key header
+seUtil.removeHeader('get', 'x-get-key');
+
+request('http://www.baidu.com/').done().then(function(res) {
+  assert.equal(res.req._headers['x-key'], 'vicanso');
+  assert.equal(res.status, 200);
+}, function(err) {
+  console.error(err);
+});
+```
 
 ## License
 
