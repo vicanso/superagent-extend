@@ -56,8 +56,12 @@ function parse(str) {
 		if (headers) {
 			req.set(headers);
 		}
-		req._reqIntcs = reqIntcs;
-		req._resIntcs = resIntcs;
+		reqIntcs.forEach(function(intc) {
+			req.addReqIntc(intc);
+		});
+		resIntcs.forEach(function(intc) {
+			req.addResIntc(intc);
+		});
 		return req.done();
 	};
 }

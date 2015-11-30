@@ -12,6 +12,46 @@ request interceptors --> fetch start --> fetch end --> response interceptors -->
 
 ## API
 
+
+### parse
+
+Parse function from description, Return a function. If method is get or delete, the return function arguments is query(object) and headers(object). Otherwise is data(object) and headers(object);
+
+Arguments:
+
+- `desc` http request description. `method url [interceptors]`
+
+```js
+'use strict';
+const superagentExtend = require('superagent-extend');
+const request = superagentExtend.request;
+const seUtil = superagentExtend.util;
+const assert = require('assert');
+
+seUtil.interceptors.logRequestUrl = function logRequestUrl(req) {
+  console.info(req.url);
+};
+
+seUtil.interceptors.logFetchTime = function logFetchTime(res) {
+  let performance = res.performance;
+  console.info(performance.fetchEnd - performance.fetchStart);
+};
+
+// if an interceptor is response interceptor, use :name(:logFetchTime), the interceptor divide by ','
+let fn = superagentExtend.parse('GET http://www.baidu.com/ logRequestUrl,:logFetchTime');
+// query {"name": "vicanso"}, headers: {"X-UUID": "MY-UUID"}
+fn({
+  name: 'vicanso'
+}, {
+  'X-UUID': 'MY-UUID'
+}).then(function(res) {
+  assert.equal(res.status, 200);
+}, function(err) {
+  console.error(err);
+});
+
+```
+
 ### done
 
 return promise wrap request end
@@ -48,7 +88,7 @@ res.performance:
 
 ### addReqIntc
 
-Add request interceptor. After all request interceptors execute end, the request start fetch.
+Add global request interceptor. After all request interceptors execute end, the request start fetch.
 
 If interceptor function return promise, it will be execute sequence.
 
@@ -87,7 +127,7 @@ request('http://www.baidu.com/').done().then(function(res) {
 
 ### removeReqIntc
 
-Remove request interceptor.
+Remove global request interceptor.
 
 Arguments:
 
@@ -115,7 +155,7 @@ seUtil.removeReqIntc();
 
 ### addResIntc
 
-Add response interceptor. After all response interceptors execute end, the response start.
+Add global response interceptor. After all response interceptors execute end, the response start.
 
 If interceptor function return promise, it will be execute sequence.
 
@@ -148,7 +188,7 @@ request('http://www.baidu.com/').done().then(function(res) {
 
 ### removeResIntc
 
-Remove response interceptor.
+Remove global response interceptor.
 
 Arguments:
 
@@ -281,6 +321,10 @@ request('http://www.baidu.com/').done().then(function(res) {
   console.error(err);
 });
 ```
+
+
+
+
 
 ## License
 

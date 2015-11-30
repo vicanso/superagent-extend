@@ -135,6 +135,24 @@ describe('request', function() {
 
 	});
 
+	it('should add interceptor for request successful', function(done) {
+		let interceptorCallCount = 0;
+		let url = 'http://www.baidu.com/';
+		let req = request.get(url);
+		req.addReqIntc(function(req) {
+			assert.equal(req.url, url);
+			interceptorCallCount++;
+		});
+		req.addResIntc(function(res) {
+			assert.equal(res.status, 200);
+			interceptorCallCount++;
+		});
+		req.done().then(function(res) {
+			assert.equal(interceptorCallCount, 2);
+			done();
+		}, done);
+	});
+
 
 	it('should parse function include interceptor successful', function(done) {
 		let interceptorCallCount = 0;
@@ -144,7 +162,7 @@ describe('request', function() {
 		util.interceptors.after = function(res) {
 			interceptorCallCount++;
 		};
-		let fn = superagentExtend.parse('get http://www.baidu.com/ before,:after');
+		let fn = superagentExtend.parse('GET http://www.baidu.com/ before,:after');
 		fn().then(function(res) {
 			assert.equal(res.status, 200);
 			assert.equal(interceptorCallCount, 2);
@@ -170,7 +188,7 @@ describe('request', function() {
 		});
 		server.listen(8080);
 
-		let postFn = superagentExtend.parse('post http://localhost:8080/');
+		let postFn = superagentExtend.parse('POST http://localhost:8080/');
 		postFn(data).then(function(res) {
 			assert.equal(res.status, 200);
 			server.close();
@@ -190,15 +208,15 @@ describe('request', function() {
 		getHeader[getKey] = 'DEF';
 		util.addHeader('get', getHeader);
 
-		request.get('http://baidu.com').done().then(function(res) {
+		request.get('http://www.baidu.com/').done().then(function(res) {
 			assert.equal(res.req._headers[commonKey], commonHeader[commonKey]);
 			util.removeHeader('common', commonKey);
 			assert(!util.getHeaders('common')[commonKey]);
 
 
 			assert.equal(res.req._headers[getKey], getHeader[getKey]);
-			util.removeHeader('get', getKey);
-			assert(!util.getHeaders('get')[getKey]);
+			util.removeHeader('get');
+			assert.equal(Object.keys(util.getHeaders('get')).length, 0);
 
 			done();
 		}, done);
