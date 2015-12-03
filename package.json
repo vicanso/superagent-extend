@@ -1,7 +1,7 @@
 {
 	"name": "superagent-extend",
 	"description": "extend superagent",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"author": {
 		"name": "vicanso 小墨鱼",
 		"email": "vicansocanbico@gmail.com"
@@ -9,7 +9,7 @@
 	"keywords": [
 		"superagent"
 	],
-	"main": "./index",
+	"main": "./index.js",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -18,9 +18,11 @@
 	"readmeFilename": "README.md",
 	"devDependencies": {
 		"gulp": "^3.9.0",
+		"gulp-browserify": "^0.5.1",
 		"gulp-istanbul": "^0.10.1",
 		"gulp-jshint": "^1.11.2",
 		"gulp-mocha": "^2.1.3",
+		"gulp-rename": "^1.2.2",
 		"raw-body": "^2.1.4"
 	},
 	"readme": "extend superagent",

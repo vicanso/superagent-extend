@@ -1,7 +1,9 @@
-var gulp = require('gulp');
-var jshint = require('gulp-jshint');
-var mocha = require('gulp-mocha');
-var istanbul = require('gulp-istanbul');
+const gulp = require('gulp');
+const jshint = require('gulp-jshint');
+const mocha = require('gulp-mocha');
+const istanbul = require('gulp-istanbul');
+const browserify = require('gulp-browserify');
+const rename = require('gulp-rename');
 
 
 gulp.task('jshint', function() {
@@ -35,4 +37,16 @@ gulp.task('test', function(cb) {
 		});
 });
 
-gulp.task('default', ['jshint', 'test']);
+
+gulp.task('browserify', function() {
+	gulp.src('./index.js')
+		.pipe(browserify({
+			require: ['superagent', ['./index.js', {
+				expose: 'superagent-extend'
+			}]]
+		}))
+		.pipe(rename('superagent-extend.js'))
+		.pipe(gulp.dest('./'));
+});
+
+gulp.task('default', ['jshint', 'test', 'browserify']);
