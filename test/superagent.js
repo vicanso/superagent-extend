@@ -6,6 +6,33 @@ const util = superagentExtend.util;
 const noop = function() {};
 
 describe('request', function() {
+	request.Request.prototype.end = function(cb) {
+		const timeout = this._timeout;
+		const req = this.request();
+		req._qs = this.qs;
+		let isTimeout = false;
+		let timer = null;
+		setTimeout(function() {
+			if (isTimeout) {
+				return;
+			}
+			clearTimeout(timer);
+			cb(null, {
+				status: 200,
+				emit: function() {},
+				req: req
+			});
+		}, 100);
+		if (timeout) {
+			timer = setTimeout(function() {
+				let err = new Error('ECONNABORTED');
+				err.code = 'ECONNABORTED';
+				cb(err);
+				isTimeout = true;
+			}, timeout);
+		};
+	};
+
 	it('should add before interceptor successful', function(done) {
 		let interceptorCallCount = 0;
 		let interval = 1000;
@@ -23,7 +50,7 @@ describe('request', function() {
 			});
 		});
 
-		request.get('http://www.baidu.com.cn').done().then(function(res) {
+		request.get('http://vicanso.com').done().then(function(res) {
 			util.removeReqIntc();
 			let performance = res.performance;
 			assert.equal(performance.use > interval, true);
@@ -44,7 +71,7 @@ describe('request', function() {
 			});
 		});
 
-		request.get('http://www.baidu.com.cn').done().then(noop, function(err) {
+		request.get('http://vicanso.com').done().then(noop, function(err) {
 			assert.equal(err.message, 'timeout');
 			util.removeReqIntc();
 			done();
@@ -65,7 +92,7 @@ describe('request', function() {
 			});
 		});
 
-		request.get('http://www.baidu.com.cn').done().then(function(res) {
+		request.get('http://vicanso.com').done().then(function(res) {
 			util.removeResIntc(fn);
 			assert.equal(util.getResIntc().length, 1);
 			let performance = res.performance;
@@ -86,7 +113,7 @@ describe('request', function() {
 			});
 		});
 
-		request.get('http://www.baidu.com.cn').done().then(noop, function(err) {
+		request.get('http://vicanso.com').done().then(noop, function(err) {
 			assert.equal(err.message, 'timeout');
 			util.removeResIntc();
 			done();
@@ -97,7 +124,7 @@ describe('request', function() {
 	it('should set timeout successful', function(done) {
 		util.timeout = 1;
 
-		request.get('http://www.baidu.com.cn').done().then(noop, function(err) {
+		request.get('http://vicanso.com').done().then(noop, function(err) {
 			assert.equal(err.code, 'ECONNABORTED');
 			util.timeout = 0;
 			done();
@@ -105,7 +132,7 @@ describe('request', function() {
 	});
 
 	it('should parse http get function successful', function(done) {
-		let str = 'get http://www.baidu.com.cn';
+		let str = 'get http://vicanso.com';
 
 		try {
 			superagentExtend.parse('get');
@@ -128,7 +155,7 @@ describe('request', function() {
 		}, {
 			UUID: Date.now()
 		}).then(function(res) {
-			assert.equal(res.req.path, '/?b=2&c=1&ch1=%F4%8F%B0%80&ch2=%EE%80%92&d=1&d=2&debug=true&dev=false&e=%0A&name=%E4%B8%AD%E6%96%87&use=');
+			assert.equal(Object.keys(res.req._qs).join(','), ['b', 'c', 'ch1', 'ch2', 'd', 'debug', 'dev', 'e', 'name', 'use'].join(','));
 			assert.equal(res.status, 200);
 			done();
 		}, done);
@@ -171,27 +198,12 @@ describe('request', function() {
 	});
 
 	it('should parse http post function successful', function(done) {
-		const http = require('http');
-		const getRawBody = require('raw-body');
-		const data = {
-			name: 'vicanso'
-		};
-		// Create an HTTP server
-		let server = http.createServer(function(req, res) {
-			getRawBody(req, function(err, buf) {
-				assert.equal(buf.toString(), JSON.stringify(data));
-				res.writeHead(200, {
-					'Content-Type': 'text/plain'
-				});
-				res.end('okay');
-			});
-		});
-		server.listen(8080);
 
 		let postFn = superagentExtend.parse('POST http://localhost:8080/');
-		postFn(data).then(function(res) {
+		postFn({
+			name: 'vicanso'
+		}).then(function(res) {
 			assert.equal(res.status, 200);
-			server.close();
 			done();
 		}, done);
 	});

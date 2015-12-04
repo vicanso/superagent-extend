@@ -1,76 +1,4 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
-const request = require('./lib/request');
-const util = require('./lib/util');
-const querystring = require('./lib/querystring');
-exports.request = request;
-exports.util = util;
-exports.parse = parse;
-
-
-/**
- * [parse description]
- * @param  {[type]} str 'method url interceptors'
- * @return {[type]}     [description]
- */
-function parse(str) {
-	let arr = str.split(' ');
-	if (arr.length < 2) {
-		throw new Error('request description is invalid');
-	}
-	let method = arr[0].toLowerCase();
-	/* istanbul ignore if */
-	if (method === 'delete') {
-		method = 'del';
-	}
-	let url = arr[1];
-	let reqIntcs = [];
-	let resIntcs = [];
-	if (arr[2]) {
-		let fns = arr[2].split(',');
-		fns.forEach(function(fn) {
-			if (fn.charAt(0) === ':') {
-				let intc = util.interceptors[fn.substring(1)];
-				if (intc) {
-					resIntcs.push(intc);
-				}
-			} else {
-				let intc = util.interceptors[fn];
-				if (intc) {
-					reqIntcs.push(intc);
-				}
-			}
-		});
-	}
-
-	return function(data, headers) {
-		if (method === 'get' || method === 'del') {
-			let queryStr = querystring.stringify(data);
-			if (queryStr) {
-				url += ('?' + queryStr);
-			}
-		}
-		let req = request[method](url);
-		if (method === 'post' || method === 'put') {
-			req.send(data);
-		}
-		if (headers) {
-			req.set(headers);
-		}
-		reqIntcs.forEach(function(intc) {
-			req.addReqIntc(intc);
-		});
-		resIntcs.forEach(function(intc) {
-			req.addResIntc(intc);
-		});
-		return req.done();
-	};
-}
-},{"./lib/querystring":4,"./lib/request":5,"./lib/util":6}],"Focm2+":[function(require,module,exports){
-module.exports=require(1)
-},{"./lib/querystring":4,"./lib/request":5,"./lib/util":6}],"superagent-extend":[function(require,module,exports){
-module.exports=require('Focm2+');
-},{}],4:[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 const QueryString = exports;
 
@@ -102,10 +30,12 @@ QueryString.stringify = QueryString.encode = function(obj, sep, eq, options) {
 					if (j < vlast)
 						fields += sep;
 				}
+				/* istanbul ignore else */
 				if (vlen && i < flast)
 					fields += sep;
 			} else {
 				fields += ks + encode(stringifyPrimitive(v));
+				/* istanbul ignore else */
 				if (i < flast)
 					fields += sep;
 			}
@@ -184,12 +114,13 @@ var stringifyPrimitive = function(v) {
 		return v;
 	if (typeof v === 'number' && isFinite(v))
 		return '' + v;
+	/* istanbul ignore else */
 	if (typeof v === 'boolean')
 		return v ? 'true' : 'false';
 	/* istanbul ignore next */
 	return '';
 };
-},{}],5:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 'use strict';
 const request = require('superagent');
 const Request = request.Request;
@@ -268,9 +199,11 @@ Request.prototype.done = function done() {
  * @param {Function} fn [description]
  */
 Request.prototype.addReqIntc = function(fn) {
+	/* istanbul ignore else */
 	if (!this._reqIntcs) {
 		this._reqIntcs = [];
 	}
+	/* istanbul ignore else */
 	if (this._reqIntcs.indexOf(fn) === -1) {
 		this._reqIntcs.push(fn);
 	}
@@ -282,9 +215,11 @@ Request.prototype.addReqIntc = function(fn) {
  * @param {Function} fn [description]
  */
 Request.prototype.addResIntc = function(fn) {
+	/* istanbul ignore else */
 	if (!this._resIntcs) {
 		this._resIntcs = [];
 	}
+	/* istanbul ignore else */
 	if (this._resIntcs.indexOf(fn) === -1) {
 		this._resIntcs.push(fn);
 	}
@@ -316,7 +251,7 @@ function runInterceptors(interceptors, args, resolve, reject) {
 		}
 	}
 }
-},{"./util":6,"superagent":"bBcoDq"}],6:[function(require,module,exports){
+},{"./util":3,"superagent":4}],3:[function(require,module,exports){
 'use strict';
 const globalInterceptors = {
 	request: [],
@@ -465,9 +400,7 @@ function getHeaders(method) {
 	method = method.toLowerCase();
 	return defaultHeaders[method];
 }
-},{}],"superagent":[function(require,module,exports){
-module.exports=require('bBcoDq');
-},{}],"bBcoDq":[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -573,11 +506,29 @@ function serialize(obj) {
   var pairs = [];
   for (var key in obj) {
     if (null != obj[key]) {
-      pairs.push(encodeURIComponent(key)
-        + '=' + encodeURIComponent(obj[key]));
-    }
-  }
+      pushEncodedKeyValuePair(pairs, key, obj[key]);
+        }
+      }
   return pairs.join('&');
+}
+
+/**
+ * Helps 'serialize' with serializing arrays.
+ * Mutates the pairs array.
+ *
+ * @param {Array} pairs
+ * @param {String} key
+ * @param {Mixed} val
+ */
+
+function pushEncodedKeyValuePair(pairs, key, val) {
+  if (Array.isArray(val)) {
+    return val.forEach(function(v) {
+      pushEncodedKeyValuePair(pairs, key, v);
+    });
+  }
+  pairs.push(encodeURIComponent(key)
+    + '=' + encodeURIComponent(val));
 }
 
 /**
@@ -822,20 +773,6 @@ Response.prototype.setHeaderProperties = function(header){
 };
 
 /**
- * Force given parser
- * 
- * Sets the body parser no matter type.
- * 
- * @param {Function}
- * @api public
- */
-
-Response.prototype.parse = function(fn){
-  this.parser = fn;
-  return this;
-};
-
-/**
  * Parse the given body `str`.
  *
  * Used for auto-parsing of bodies. Parsers
@@ -847,7 +784,7 @@ Response.prototype.parse = function(fn){
  */
 
 Response.prototype.parseBody = function(str){
-  var parse = this.parser || request.parse[this.type];
+  var parse = request.parse[this.type];
   return parse && str && (str.length || str instanceof Object)
     ? parse(str)
     : null;
@@ -1129,6 +1066,20 @@ Request.prototype.type = function(type){
 };
 
 /**
+ * Force given parser
+ *
+ * Sets the body parser no matter type.
+ *
+ * @param {Function}
+ * @api public
+ */
+
+Request.prototype.parse = function(fn){
+  this._parser = fn;
+  return this;
+};
+
+/**
  * Set Accept to `type`, mapping values from `request.types`.
  *
  * Examples:
@@ -1253,7 +1204,7 @@ Request.prototype.attach = function(field, file, filename){
  *       // manual json
  *       request.post('/user')
  *         .type('json')
- *         .send('{"name":"tj"})
+ *         .send('{"name":"tj"}')
  *         .end(callback)
  *
  *       // auto json
@@ -1450,7 +1401,7 @@ Request.prototype.end = function(fn){
   if ('GET' != this.method && 'HEAD' != this.method && 'string' != typeof data && !isHost(data)) {
     // serialize stuff
     var contentType = this.getHeader('Content-Type');
-    var serialize = request.serialize[contentType ? contentType.split(';')[0] : ''];
+    var serialize = this._parser || request.serialize[contentType ? contentType.split(';')[0] : ''];
     if (serialize) data = serialize(data);
   }
 
@@ -1462,7 +1413,10 @@ Request.prototype.end = function(fn){
 
   // send stuff
   this.emit('request', this);
-  xhr.send(data);
+
+  // IE11 xhr.send(undefined) sends 'undefined' string as POST payload (instead of nothing)
+  // We need null here if data is undefined
+  xhr.send(typeof data !== 'undefined' ? data : null);
   return this;
 };
 
@@ -1560,11 +1514,14 @@ request.head = function(url, data, fn){
  * @api public
  */
 
-request.del = function(url, fn){
+function del(url, fn){
   var req = request('DELETE', url);
   if (fn) req.end(fn);
   return req;
 };
+
+request.del = del;
+request.delete = del;
 
 /**
  * PATCH `url` with optional `data` and callback `fn(res)`.
@@ -1626,7 +1583,7 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":9,"reduce":10}],9:[function(require,module,exports){
+},{"emitter":5,"reduce":6}],5:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -1792,7 +1749,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],10:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
@@ -1817,4 +1774,74 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}]},{},[1])
+},{}],"superagent-extend":[function(require,module,exports){
+'use strict';
+const request = require('./lib/request');
+const util = require('./lib/util');
+const querystring = require('./lib/querystring');
+exports.request = request;
+exports.util = util;
+exports.parse = parse;
+
+
+/**
+ * [parse description]
+ * @param  {[type]} str 'method url interceptors'
+ * @return {[type]}     [description]
+ */
+function parse(str) {
+	let arr = str.split(' ');
+	if (arr.length < 2) {
+		throw new Error('request description is invalid');
+	}
+	let method = arr[0].toLowerCase();
+	/* istanbul ignore if */
+	if (method === 'delete') {
+		method = 'del';
+	}
+	let url = arr[1];
+	let reqIntcs = [];
+	let resIntcs = [];
+	if (arr[2]) {
+		let fns = arr[2].split(',');
+		fns.forEach(function(fn) {
+			if (fn.charAt(0) === ':') {
+				let intc = util.interceptors[fn.substring(1)];
+				/* istanbul ingore else */
+				if (intc) {
+					resIntcs.push(intc);
+				}
+			} else {
+				let intc = util.interceptors[fn];
+				/* istanbul ingore else */
+				if (intc) {
+					reqIntcs.push(intc);
+				}
+			}
+		});
+	}
+
+	return function(data, headers) {
+		if (method === 'get' || method === 'del') {
+			let queryStr = querystring.stringify(data);
+			if (queryStr) {
+				url += ('?' + queryStr);
+			}
+		}
+		let req = request[method](url);
+		if (method === 'post' || method === 'put') {
+			req.send(data);
+		}
+		if (headers) {
+			req.set(headers);
+		}
+		reqIntcs.forEach(function(intc) {
+			req.addReqIntc(intc);
+		});
+		resIntcs.forEach(function(intc) {
+			req.addResIntc(intc);
+		});
+		return req.done();
+	};
+}
+},{"./lib/querystring":1,"./lib/request":2,"./lib/util":3}]},{},[]);

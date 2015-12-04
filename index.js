@@ -30,11 +30,13 @@ function parse(str) {
 		fns.forEach(function(fn) {
 			if (fn.charAt(0) === ':') {
 				let intc = util.interceptors[fn.substring(1)];
+				/* istanbul ingore else */
 				if (intc) {
 					resIntcs.push(intc);
 				}
 			} else {
 				let intc = util.interceptors[fn];
+				/* istanbul ingore else */
 				if (intc) {
 					reqIntcs.push(intc);
 				}

@@ -1,32 +1,36 @@
 {
-	"name": "superagent-extend",
-	"description": "extend superagent",
-	"version": "0.1.1",
-	"author": {
-		"name": "vicanso 小墨鱼",
-		"email": "vicansocanbico@gmail.com"
-	},
-	"keywords": [
-		"superagent"
-	],
-	"main": "./index.js",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/vicanso/superagent-extend.git"
-	},
-	"readmeFilename": "README.md",
-	"devDependencies": {
-		"gulp": "^3.9.0",
-		"gulp-browserify": "^0.5.1",
-		"gulp-istanbul": "^0.10.1",
-		"gulp-jshint": "^1.11.2",
-		"gulp-mocha": "^2.1.3",
-		"gulp-rename": "^1.2.2",
-		"raw-body": "^2.1.4"
-	},
-	"readme": "extend superagent",
-	"dependencies": {
-		"superagent": "^1.4.0"
-	}
+  "name": "superagent-extend",
+  "description": "extend superagent",
+  "version": "0.1.1",
+  "author": {
+    "name": "vicanso 小墨鱼",
+    "email": "vicansocanbico@gmail.com"
+  },
+  "keywords": [
+    "superagent"
+  ],
+  "main": "./index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vicanso/superagent-extend.git"
+  },
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "browserify": "^12.0.1",
+    "istanbul": "^0.4.1",
+    "jshint": "^2.8.0",
+    "mocha": "^2.3.4",
+    "raw-body": "^2.1.4"
+  },
+  "readme": "extend superagent",
+  "scripts": {
+    "test": "node ./node_modules/.bin/jshint ./lib/* ./index.js && node ./node_modules/.bin/_mocha --reporter spec",
+    "test-cov": "node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --",
+    "test-travis": "node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly --",
+    "build": "node ./node_modules/.bin/browserify -r ./index.js:superagent-extend > superagent-extend.js"
+  },
+  "dependencies": {
+    "superagent": "^1.4.0"
+  }
 }
