@@ -3,137 +3,135 @@ const assert = require('assert');
 const superagentExtend = require('../index');
 const request = superagentExtend.request;
 const util = superagentExtend.util;
+const Koa = require('koa');
 const noop = function() {};
 
 describe('request', function() {
-	request.Request.prototype.end = function(cb) {
-		const timeout = this._timeout;
-		const req = this.request();
-		req._qs = this.qs;
-		let isTimeout = false;
-		let timer = null;
-		setTimeout(function() {
-			if (isTimeout) {
-				return;
-			}
-			clearTimeout(timer);
-			cb(null, {
-				status: 200,
-				emit: function() {},
-				req: req
-			});
-		}, 100);
-		if (timeout) {
-			timer = setTimeout(function() {
-				let err = new Error('ECONNABORTED');
-				err.code = 'ECONNABORTED';
-				cb(err);
-				isTimeout = true;
-			}, timeout);
-		};
-	};
+	const app = new Koa();
+	const server = app.listen();
+	const address = server.address();
+	util.addReqIntc(req => {
+		req.url = 'http://localhost:' + address.port + req.url;
+	});
 
-	it('should add before interceptor successful', function(done) {
-		let interceptorCallCount = 0;
-		let interval = 1000;
-
-		util.addReqIntc(function(req) {
-			interceptorCallCount++;
+	app.use(ctx => {
+		return new Promise((resolve) => {
+			setTimeout(() => {
+				ctx.body = ctx.url;
+				resolve();
+			}, 100);
 		});
+	});
 
-		util.addReqIntc(function(req) {
+	it('should add before interceptor successful', done => {
+		let interceptorCallCount = 0;
+		const interval = 1000;
+
+		const fn1 = (req) => {
+			interceptorCallCount++;
+		};
+
+		const fn2 = (req) => {
 			return new Promise(function(resolve, reject) {
 				setTimeout(function() {
 					interceptorCallCount++;
 					resolve();
 				}, interval);
 			});
-		});
+		};
 
-		request.get('http://vicanso.com').done().then(function(res) {
-			util.removeReqIntc();
-			let performance = res.performance;
+		util.addReqIntc(fn1, fn2);
+
+
+		request.get('/').done().then(function(res) {
+			const performance = res.performance;
 			assert.equal(performance.use > interval, true);
 			assert(performance.fetchStart - performance.requestStart >= 1000)
 			assert.equal(res.performance.requesting, 0);
 			assert.equal(interceptorCallCount, 2);
+			util.removeReqIntc(fn1, fn2);
 			done();
 		}, done);
 	});
 
 
-	it('should throw request interceptor error successful', function(done) {
-		util.addReqIntc(function(req) {
+	it('should throw request interceptor error successful', done => {
+		const fn = (req) => {
 			return new Promise(function(resolve, reject) {
 				setTimeout(function() {
 					reject(new Error('timeout'));
 				}, 100);
 			});
-		});
+		};
+		util.addResIntc(fn);
 
-		request.get('http://vicanso.com').done().then(noop, function(err) {
+		request.get('/').done().then(noop, function(err) {
 			assert.equal(err.message, 'timeout');
-			util.removeReqIntc();
+
+			util.removeResIntc(fn);
+
 			done();
 		});
 	});
 
+
 	it('should add after interceptor successful', function(done) {
 		let interceptorCallCount = 0;
 		let interval = 1000;
-		let fn = function(res) {
+		const fn1 = function(res) {
 			interceptorCallCount++;
 		};
-		util.addResIntc(fn);
-		util.addResIntc(function(res) {
+		const fn2 = (res) => {
 			return new Promise(function(resolve, reject) {
 				interceptorCallCount++;
 				setTimeout(resolve, interval);
 			});
-		});
+		};
 
-		request.get('http://vicanso.com').done().then(function(res) {
-			util.removeResIntc(fn);
+		util.addResIntc(fn1, fn2);
+
+		request.get('/').done().then(function(res) {
+			util.removeResIntc(fn1);
 			assert.equal(util.getResIntc().length, 1);
 			let performance = res.performance;
 			assert(performance.requestEnd - performance.fetchEnd >= interval);
 			assert.equal(interceptorCallCount, 2);
-			util.removeResIntc();
+			util.removeResIntc(fn2);
 			done();
 		}, done);
 	});
 
 
 	it('should throw response interceptor error successful', function(done) {
-		util.addResIntc(function(res) {
+		const fn = function(res) {
 			return new Promise(function(resolve, reject) {
 				setTimeout(function() {
 					reject(new Error('timeout'));
 				}, 100);
 			});
-		});
+		};
+		util.addResIntc(fn);
 
-		request.get('http://vicanso.com').done().then(noop, function(err) {
+		request.get('/').done().then(noop, function(err) {
 			assert.equal(err.message, 'timeout');
-			util.removeResIntc();
+			util.removeResIntc(fn);
 			done();
 		});
 	});
 
-
 	it('should set timeout successful', function(done) {
-		util.timeout = 1;
+		util.timeout = 10;
 
-		request.get('http://vicanso.com').done().then(noop, function(err) {
+		request.get('/').done().then(noop, function(err) {
 			assert.equal(err.code, 'ECONNABORTED');
 			util.timeout = 0;
 			done();
 		});
 	});
 
-	it('should parse http get function successful', function(done) {
-		let str = 'get http://vicanso.com';
 
+	it('should parse http get function successful', function(done) {
+		let str = 'get /';
 		try {
 			superagentExtend.parse('get');
 		} catch (err) {
@@ -160,78 +158,6 @@ describe('request', function() {
 			done();
 		}, done);
 
-	});
-
-	it('should add interceptor for request successful', function(done) {
-		let interceptorCallCount = 0;
-		let url = 'http://www.baidu.com/';
-		let req = request.get(url);
-		req.addReqIntc(function(req) {
-			assert.equal(req.url, url);
-			interceptorCallCount++;
-		});
-		req.addResIntc(function(res) {
-			assert.equal(res.status, 200);
-			interceptorCallCount++;
-		});
-		req.done().then(function(res) {
-			assert.equal(interceptorCallCount, 2);
-			done();
-		}, done);
-	});
-
-
-	it('should parse function include interceptor successful', function(done) {
-		let interceptorCallCount = 0;
-		util.interceptors.before = function(req) {
-			interceptorCallCount++;
-		};
-		util.interceptors.after = function(res) {
-			interceptorCallCount++;
-		};
-		let fn = superagentExtend.parse('GET http://www.baidu.com/ before,:after');
-		fn().then(function(res) {
-			assert.equal(res.status, 200);
-			assert.equal(interceptorCallCount, 2);
-			done();
-		}, done);
-	});
-
-	it('should parse http post function successful', function(done) {
-
-		let postFn = superagentExtend.parse('POST http://localhost:8080/');
-		postFn({
-			name: 'vicanso'
-		}).then(function(res) {
-			assert.equal(res.status, 200);
-			done();
-		}, done);
-	});
-
-
-	it('should set header successful', function(done) {
-		let commonKey = 'uuid';
-		let commonHeader = {};
-		commonHeader[commonKey] = 'ABCD';
-		util.addHeader('common', commonHeader);
-
-		let getKey = 'guuid';
-		let getHeader = {};
-		getHeader[getKey] = 'DEF';
-		util.addHeader('get', getHeader);
-
-		request.get('http://www.baidu.com/').done().then(function(res) {
-			assert.equal(res.req._headers[commonKey], commonHeader[commonKey]);
-			util.removeHeader('common', commonKey);
-			assert(!util.getHeaders('common')[commonKey]);
-
-
-			assert.equal(res.req._headers[getKey], getHeader[getKey]);
-			util.removeHeader('get');
-			assert.equal(Object.keys(util.getHeaders('get')).length, 0);
-
-			done();
-		}, done);
 	});
 
 });

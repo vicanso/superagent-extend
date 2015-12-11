@@ -2,6 +2,7 @@
 const request = require('./lib/request');
 const util = require('./lib/util');
 const querystring = require('./lib/querystring');
+const pathToRegexp = require('path-to-regexp');
 exports.request = request;
 exports.util = util;
 exports.parse = parse;
@@ -13,7 +14,7 @@ exports.parse = parse;
  * @return {[type]}     [description]
  */
 function parse(str) {
-	let arr = str.split(' ');
+	const arr = str.split(' ');
 	if (arr.length < 2) {
 		throw new Error('request description is invalid');
 	}
@@ -23,11 +24,11 @@ function parse(str) {
 		method = 'del';
 	}
 	let url = arr[1];
-	let reqIntcs = [];
-	let resIntcs = [];
+	const paramKeys = pathToRegexp(url).keys;
+	const reqIntcs = [];
+	const resIntcs = [];
 	if (arr[2]) {
-		let fns = arr[2].split(',');
-		fns.forEach(function(fn) {
+		arr[2].split(',').forEach(function(fn) {
 			if (fn.charAt(0) === ':') {
 				let intc = util.interceptors[fn.substring(1)];
 				/* istanbul ingore else */
@@ -44,14 +45,21 @@ function parse(str) {
 		});
 	}
 
-	return function(data, headers) {
+	return function() {
+		const args = Array.from(arguments);
+		let cloneUrl = url;
+		paramKeys.forEach(key => {
+			cloneUrl = cloneUrl.replace(':' + key.name, args.shift());
+		});
+		const data = args[0];
+		const headers = args[1];
 		if (method === 'get' || method === 'del') {
 			let queryStr = querystring.stringify(data);
 			if (queryStr) {
-				url += ('?' + queryStr);
+				cloneUrl += ('?' + queryStr);
 			}
 		}
-		let req = request[method](url);
+		let req = request[method](cloneUrl);
 		if (method === 'post' || method === 'put') {
 			req.send(data);
 		}
