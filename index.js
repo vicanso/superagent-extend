@@ -23,7 +23,7 @@ function parse(str) {
 	if (method === 'delete') {
 		method = 'del';
 	}
-	let url = arr[1];
+	const url = arr[1];
 	const paramKeys = pathToRegexp(url).keys;
 	const reqIntcs = [];
 	const resIntcs = [];
@@ -60,12 +60,15 @@ function parse(str) {
 			}
 		}
 		let req = request[method](cloneUrl);
-		if (method === 'post' || method === 'put') {
-			req.send(data);
-		}
-		if (headers) {
-			req.set(headers);
-		}
+		req.addReqIntc(() => {
+			if (method === 'post' || method === 'put') {
+				req.send(data);
+			}
+			if (headers) {
+				req.set(headers);
+			}
+		});
+
 		reqIntcs.forEach(function(intc) {
 			req.addReqIntc(intc);
 		});

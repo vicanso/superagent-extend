@@ -50,6 +50,15 @@ fn({
   console.error(err);
 });
 
+
+let getUser = superagentExtend.parse('GET /user/:account');
+// request /user/vicanso
+getUser('vicanso').then(function(res) {
+  assert.equal(res.status, 200);
+}, function(err){
+  console.error(err);
+});
+
 ```
 
 ### done

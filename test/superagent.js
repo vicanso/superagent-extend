@@ -1,6 +1,7 @@
 "use strict";
 const assert = require('assert');
 const superagentExtend = require('../index');
+const bodyParser = require('koa-bodyparser');
 const request = superagentExtend.request;
 const util = superagentExtend.util;
 const Koa = require('koa');
@@ -14,10 +15,23 @@ describe('request', function() {
 		req.url = 'http://localhost:' + address.port + req.url;
 	});
 
+	app.use(bodyParser());
+
 	app.use(ctx => {
 		return new Promise((resolve) => {
 			setTimeout(() => {
-				ctx.body = ctx.url;
+				if (ctx.method === 'POST') {
+					ctx.body = {
+						url: ctx.url,
+						post: ctx.request.body
+					};
+				} else {
+					ctx.body = {
+						url: ctx.url,
+						query: ctx.query
+					};
+				}
+
 				resolve();
 			}, 100);
 		});
@@ -75,9 +89,9 @@ describe('request', function() {
 	});
 
 
-	it('should add after interceptor successful', function(done) {
+	it('should add after interceptor successful', done => {
 		let interceptorCallCount = 0;
-		let interval = 1000;
+		const interval = 1000;
 		const fn1 = function(res) {
 			interceptorCallCount++;
 		};
@@ -102,7 +116,7 @@ describe('request', function() {
 	});
 
 
-	it('should throw response interceptor error successful', function(done) {
+	it('should throw response interceptor error successful', done => {
 		const fn = function(res) {
 			return new Promise(function(resolve, reject) {
 				setTimeout(function() {
@@ -119,7 +133,7 @@ describe('request', function() {
 		});
 	});
 
-	it('should set timeout successful', function(done) {
+	it('should set timeout successful', done => {
 		util.timeout = 10;
 
 		request.get('/').done().then(noop, function(err) {
@@ -130,15 +144,14 @@ describe('request', function() {
 	});
 
 
-	it('should parse http get function successful', function(done) {
-		let str = 'get /';
+	it('should parse http get function successful', done => {
 		try {
 			superagentExtend.parse('get');
 		} catch (err) {
 			assert.equal(err.message, 'request description is invalid');
 		}
 
-		let fn = superagentExtend.parse(str);
+		let fn = superagentExtend.parse('get /');
 		fn({
 			d: [1, 2],
 			c: 1,
@@ -153,11 +166,95 @@ describe('request', function() {
 		}, {
 			UUID: Date.now()
 		}).then(function(res) {
-			assert.equal(Object.keys(res.req._qs).join(','), ['b', 'c', 'ch1', 'ch2', 'd', 'debug', 'dev', 'e', 'name', 'use'].join(','));
+			assert.equal(Object.keys(res.body.query).join(','), ['b', 'c', 'ch1', 'ch2', 'd', 'debug', 'dev', 'e', 'name', 'use'].join(','));
 			assert.equal(res.status, 200);
 			done();
 		}, done);
 
 	});
+
+
+	it('should parse http function with param successful', done => {
+		const fn = superagentExtend.parse('GET /user/:name');
+		fn('vicanso').then((res) => {
+			assert.equal(res.status, 200);
+			assert.equal(res.body.url, '/user/vicanso');
+			done();
+		}, done);
+	});
+
+
+	it('should add interceptor for request successful', done => {
+		let interceptorCallCount = 0;
+		const req = request.get('/');
+		req.addReqIntc(function(req) {
+			interceptorCallCount++;
+		});
+		req.addResIntc(function(res) {
+			assert.equal(res.status, 200);
+			interceptorCallCount++;
+		});
+		req.done().then(function(res) {
+			assert.equal(interceptorCallCount, 2);
+			done();
+		}, done);
+	});
+
+
+	it('should parse function include interceptor successful', done => {
+		let interceptorCallCount = 0;
+		util.interceptors.before = function(req) {
+			interceptorCallCount++;
+		};
+		util.interceptors.after = function(res) {
+			interceptorCallCount++;
+		};
+		const fn = superagentExtend.parse('GET / before,:after');
+		fn().then(function(res) {
+			assert.equal(res.status, 200);
+			assert.equal(interceptorCallCount, 2);
+			done();
+		}, done);
+	});
+
+
+	it('should parse http post function successful', done => {
+
+		const postFn = superagentExtend.parse('POST /');
+		postFn({
+			name: 'vicanso'
+		}).then(function(res) {
+			assert.equal(res.status, 200);
+			assert.equal(res.body.post.name, 'vicanso');
+			done();
+		}, done);
+	});
+
+
+	it('should set header successful', done => {
+		const commonKey = 'uuid';
+		const commonHeader = {};
+		commonHeader[commonKey] = 'ABCD';
+		util.addHeader('common', commonHeader);
+
+		const getKey = 'guuid';
+		const getHeader = {};
+		getHeader[getKey] = 'DEF';
+		util.addHeader('get', getHeader);
+
+		request.get('/').done().then(function(res) {
+			assert.equal(res.req._headers[commonKey], commonHeader[commonKey]);
+			util.removeHeader('common', commonKey);
+			assert(!util.getHeaders('common')[commonKey]);
+
+
+			assert.equal(res.req._headers[getKey], getHeader[getKey]);
+			util.removeHeader('get');
+			assert.equal(Object.keys(util.getHeaders('get')).length, 0);
+
+			done();
+		}, done);
+	});
+
 
 });
