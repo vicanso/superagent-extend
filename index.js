@@ -55,8 +55,12 @@ function parse(str) {
 		const headers = args[1];
 		if (method === 'get' || method === 'del') {
 			let queryStr = querystring.stringify(data);
+			let ch = '?';
+			if (cloneUrl.indexOf('?') !== -1) {
+				ch = '&';
+			}
 			if (queryStr) {
-				cloneUrl += ('?' + queryStr);
+				cloneUrl += (ch + queryStr);
 			}
 		}
 		let req = request[method](cloneUrl);

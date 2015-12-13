@@ -151,7 +151,7 @@ describe('request', function() {
 			assert.equal(err.message, 'request description is invalid');
 		}
 
-		let fn = superagentExtend.parse('get /');
+		let fn = superagentExtend.parse('get /?user=vicanso');
 		fn({
 			d: [1, 2],
 			c: 1,
@@ -166,7 +166,7 @@ describe('request', function() {
 		}, {
 			UUID: Date.now()
 		}).then(function(res) {
-			assert.equal(Object.keys(res.body.query).join(','), ['b', 'c', 'ch1', 'ch2', 'd', 'debug', 'dev', 'e', 'name', 'use'].join(','));
+			assert.equal(Object.keys(res.body.query).join(','), ['user', 'b', 'c', 'ch1', 'ch2', 'd', 'debug', 'dev', 'e', 'name', 'use'].join(','));
 			assert.equal(res.status, 200);
 			done();
 		}, done);
